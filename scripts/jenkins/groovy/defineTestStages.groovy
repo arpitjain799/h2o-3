@@ -255,7 +255,7 @@ def call(final pipelineContext) {
       stageName: 'MOJO Compatibility (Java 7)', target: 'test-mojo-compatibility',
       archiveFiles: false, timeoutValue: 20, hasJUnit: false, pythonVersion: '3.6', javaVersion: 7,
       component: pipelineContext.getBuildConfig().COMPONENT_JAVA, // only run when Java changes (R/Py cannot affect mojo)
-      imageSpecifier: "mojocompat",
+      imageSpecifier: "mojocompat", imageVersion: 43,
       additionalTestPackages: [pipelineContext.getBuildConfig().COMPONENT_PY]
     ],
     [
@@ -878,6 +878,7 @@ private void invokeStageUsingDefinition(final stageDef, final pipelineContext) {
     activatePythonEnv = stageDef['activatePythonEnv']
     customDockerArgs = stageDef['customDockerArgs']
     imageSpecifier = stageDef['imageSpecifier']
+    imageVersion = stageDef['imageVersion']
     healthCheckSuppressed = stageDef['healthCheckSuppressed']
     addToDockerGroup = stageDef['addToDockerGroup']
     awsCredsPrefix = stageDef['awsCredsPrefix']
