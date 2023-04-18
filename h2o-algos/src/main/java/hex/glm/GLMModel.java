@@ -706,33 +706,43 @@ public class GLMModel extends Model<GLMModel,GLMModel.GLMParameters,GLMModel.GLM
      return deviance((double)yr,(double)ym);
     }
 
+    static final double LOG2PI = 1.8378770664093453;
     public final double likelihood(double w, double yr, double ym) {
+      boolean wEqualsOne = w == 1.0;
       switch (_family) {
         case gaussian:
-          return -.5 * (w * Math.pow(yr - ym, 2) / _dispersion_estimated 
-                  + Math.log(_dispersion_estimated / w) + Math.log(2 * Math.PI));
+          return wEqualsOne ? -.5 * (Math.pow(yr - ym, 2) / _dispersion_estimated
+                  + Math.log(_dispersion_estimated) + LOG2PI) : -.5 * (w * Math.pow(yr - ym, 2) / _dispersion_estimated 
+                  + Math.log(_dispersion_estimated / w) + LOG2PI);
         case binomial:
-          return w * (yr * Math.log(ym) + (1-yr) * Math.log(1 - ym)) 
+          return wEqualsOne ? (yr * Math.log(ym) + (1-yr) * Math.log(1 - ym))
+                  + (Gamma.digamma(2) - Gamma.digamma(yr + 1)
+                  - Gamma.digamma(1 - yr + 1)) : w * (yr * Math.log(ym) + (1-yr) * Math.log(1 - ym)) 
                   + w * (Gamma.digamma(2) - Gamma.digamma(yr + 1) 
                   - Gamma.digamma(1 - yr + 1));
         case quasibinomial:
           if (yr == ym)
             return 0;
           else if (ym > 1)
-            return -w * (yr * Math.log(ym));
+            return wEqualsOne ? (yr * Math.log(ym)) : -w * (yr * Math.log(ym));
           else
-            return -w * (yr * Math.log(ym) + (1 - yr) * Math.log(1 - ym));
+            return wEqualsOne ? (yr * Math.log(ym) + (1 - yr) * Math.log(1 - ym)) : -w * (yr * Math.log(ym) + (1 - yr) * Math.log(1 - ym));
         case fractionalbinomial:
           if (yr == ym)
             return 0;
-          return w * ((MathUtils.y_log_y(yr, ym)) + MathUtils.y_log_y(1 - yr, 1 - ym));
+          return wEqualsOne ?((MathUtils.y_log_y(yr, ym)) + MathUtils.y_log_y(1 - yr, 1 - ym))
+                  : w * ((MathUtils.y_log_y(yr, ym)) + MathUtils.y_log_y(1 - yr, 1 - ym));
         case poisson:
-          return w * (yr * Math.log(ym) - ym - Gamma.digamma(yr + 1)); // gamma(n) = (n-1)!
+          return wEqualsOne ? (yr * Math.log(ym) - ym - Gamma.digamma(yr + 1)) 
+                  : w * (yr * Math.log(ym) - ym - Gamma.digamma(yr + 1)); // gamma(n) = (n-1)!
         case negativebinomial:
-          return yr * Math.log(_invTheta * ym / w) - (yr + w/_invTheta) * Math.log(1 + _invTheta * ym / w) 
+          return wEqualsOne ? yr * Math.log(_invTheta * ym) - (yr + 1/_invTheta) * Math.log(1 + _invTheta * ym)
+                  + Math.log(Gamma.gamma(yr + 1.0/_invTheta) / (Gamma.gamma(yr + 1) * Gamma.gamma(1.0/_invTheta)))
+                  : yr * Math.log(_invTheta * ym / w) - (yr + w/_invTheta) * Math.log(1 + _invTheta * ym / w) 
                   + Math.log(Gamma.gamma(yr + w/_invTheta) / (Gamma.gamma(yr + 1) * Gamma.gamma(w/_invTheta)));
         case gamma:
-          return w * Math.log(w*yr / ym) - w*yr/ym - Math.log(yr) - Gamma.digamma(w);
+          return wEqualsOne ? Math.log(yr / ym) - yr/ym - Math.log(yr) 
+                  : w * Math.log(w*yr / ym) - w*yr/ym - Math.log(yr) - Gamma.digamma(w);
         case tweedie: // todo - update with Tomas's solution
             double temp;
             if (_tweedie_variance_power == 1) {
